@@ -202,6 +202,7 @@ contract DSCEngine is ReentrancyGuard {
      * returns how close to liquidation a user is
      * if user is below 1, then they can be liquated
      */
+    // a bug here
     function _healthFactor(address user) private view returns (uint256) {
         (uint256 totalDscMinted, uint256 collateralValueInUsd) = _getAccountInformation(user);
         uint256 collateralAdjustedForThreshold = (collateralValueInUsd * LIQUIDATION_THRESOLD) / LIQUIDATION_PRECISION;
@@ -243,4 +244,9 @@ contract DSCEngine is ReentrancyGuard {
 
         return ((uint256(price) * ADDITIONAL_FEED_PRECISION) * amount) / PRECISION;
     }
+       function getAccountInformation(address user) public
+        view 
+        returns (uint256 totalDscMinted, uint256 collateralValueInUsd){
+            (totalDscMinted, collateralValueInUsd) = _getAccountInformation(user);
+        }
 }
