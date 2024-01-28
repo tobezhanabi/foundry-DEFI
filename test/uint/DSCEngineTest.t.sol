@@ -264,4 +264,7 @@ contract DSCEngineTest is Test {
         vm.expectRevert(DSCEngine.DSCEngine__NeedsMoreThanZero.selector);
         dsce.redeemCollateralForDSC(weth, 0, amountToMint);
     }
+    function testRevertsIfRedeemAmountIsZero() public depositCollateralAndMintDSC{
+        
+    }
 }
