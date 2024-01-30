@@ -8,6 +8,7 @@ import {DecentralizedStableCoin} from "../../src/DecentralizedStableCoin.sol";
 
 import {DSCEngine} from "../../src/DSCEngine.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/ERC20Mock.sol";
+import {MockV3Aggregator} from "../mocks/MockV3Aggregator.sol";
 
 contract Handler is Test{
 
@@ -19,6 +20,7 @@ ERC20Mock wbtc;
 uint256 MAX_DEPOSIT_SIZE = type(uint96).max;
 uint256 public timeMintisCalled;
 address[] public userWithCollateralDeposited;
+MockV3Aggregator public ethUsdPriceFeed;
 
 
 
@@ -28,6 +30,7 @@ constructor (DSCEngine _dscEngine, DecentralizedStableCoin _dsc){
 address[] memory collateralTokens = dsce.getCollateralTokens();
 weth = ERC20Mock(collateralTokens[0]);
 wbtc = ERC20Mock(collateralTokens[1]);
+ethUsdPriceFeed = MockV3Aggregator(dsce.getCollateralTokenPriceFeed(address(weth)));
 }
 function mintDSC(uint256 amount, uint256 addressSeed)public{
     
@@ -73,7 +76,13 @@ function redeemCollateral(uint256 collateralSeed, uint256 amountCollateral) publ
         return;
     } 
     dsce.redeemCollateral(address(collateral), amountCollateral);
-}
+} 
+
+// function updateCollateralPrice(uint96 newPrice) public{
+//     int256 newPriceInt = int256(uint256(newPrice));
+//     ethUsdPriceFeed.updateAnswer(newPriceInt);
+// }
+//This will break code since it pushes health to below 100%
 
 
 //Helper function
