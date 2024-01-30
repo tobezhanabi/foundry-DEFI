@@ -2,21 +2,57 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 import {Test, console} from "forge-std/Test.sol";
-import {StdInvariant} from "forge-std/StdInvariant.sol";
-import {DeployDSC} from "../../script/DeployDSC.s.sol";
-import {DecentralizedStableCoin} from "../../src/DecentralizedStableCoin.sol";
-import {HelperConfig} from "../../script/HelperConfig.s.sol";
-import {DSCEngine} from "../../src/DSCEngine.sol";
 
-contract Handler {
-    DeployDSC deployer;
+
+import {DecentralizedStableCoin} from "../../src/DecentralizedStableCoin.sol";
+
+import {DSCEngine} from "../../src/DSCEngine.sol";
+import {ERC20Mock} from "@openzeppelin/contracts/mocks/ERC20Mock.sol";
+
+contract Handler is Test{
+
 DSCEngine dsce;
 DecentralizedStableCoin dsc;
-HelperConfig config;
+
+ERC20Mock weth;
+ERC20Mock wbtc;
+uint256 MAX_DEPOSIT_SIZE = type(uint96).max;
+uint256 public timeMintisCalled;
+address[] public userWithCollateralDeposited;
+
+
+
+constructor (DSCEngine _dscEngine, DecentralizedStableCoin _dsc){
+    dsce = _dscEngine;
+    dsc = _dsc;
 address[] memory collateralTokens = dsce.getCollateralTokens();
 weth = ERC20Mock(collateralTokens[0]);
 wbtc = ERC20Mock(collateralTokens[1]);
+}
+function mintDSC(uint256 amount, uint256 addressSeed)public{
+    
+    if (userWithCollateralDeposited.length == 0){
+        return;
+    }
+    address sender = userWithCollateralDeposited[addressSeed % userWithCollateralDeposited.length];
+    (uint256 totalDscMinted, uint256 collateralValueInUsd ) = dsce.getAccountInformation(sender);
+    int256 maxDscToMint = (int256(collateralValueInUsd) / 2) - int256(totalDscMinted);
+    
+    if(maxDscToMint < 0) {
+        return;
+    }
+    amount = bound(amount, 0, uint256(maxDscToMint));
+    
+    if(amount == 0){
+        return;
+    }
+    vm.startPrank(sender);
+    dsce.mintDSC(amount);
+    vm.stopPrank();
+    
+    timeMintisCalled ++;
 
+}
 function depositCollateral(uint256 collateralSeed, uint256 amountCollateral) public{
     ERC20Mock collateral = _getCollateralFromSeed(collateralSeed);
     amountCollateral = bound(amountCollateral, 1, MAX_DEPOSIT_SIZE);
@@ -24,12 +60,19 @@ function depositCollateral(uint256 collateralSeed, uint256 amountCollateral) pub
     vm.startPrank(msg.sender);
     collateral.mint(msg.sender, amountCollateral);
     collateral.approve(address(dsce), amountCollateral);
-    dsce.depositCollateral(address(collateralSeed), amountCollateral);
+    dsce.depositCollateral(address(collateral), amountCollateral);
     vm.stopPrank();
+    userWithCollateralDeposited.push(msg.sender);
 }
 
 function redeemCollateral(uint256 collateralSeed, uint256 amountCollateral) public{
-    ERC20Mock
+    ERC20Mock collateral = _getCollateralFromSeed(collateralSeed);
+    uint256 maxCollateralToRedeem = dsce.getCollateralBalanceOfUser(address(collateral), msg.sender);
+    amountCollateral = bound(amountCollateral, 0, maxCollateralToRedeem);
+    if (amountCollateral == 0){
+        return;
+    } 
+    dsce.redeemCollateral(address(collateral), amountCollateral);
 }
 
 

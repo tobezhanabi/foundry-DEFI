@@ -302,9 +302,9 @@ contract DSCEngine is ReentrancyGuard {
         return _getUsdValue(token, amount);
     }
 
-    function getCollateralBalanceOfUser(address user, address token) external view returns (uint256) {
-        return s_collateralDeposited[user][token];
-    }
+    // function getCollateralBalanceOfUser(address user, address token) external view returns (uint256) {
+    //     return s_collateralDeposited[user][token];
+    // }
 
     // function getAccountCollateralValue(address user) public view returns (uint256 totalCollateralValueInUsd) {
     //     for (uint256 index = 0; index < s_collateralTokens.length; index++) {
@@ -347,7 +347,10 @@ contract DSCEngine is ReentrancyGuard {
         return address(i_dsc);
     }
 
-    function getCollateralTokenPriceFeed(address token) external view returns (address) {
+    function getCollateralBalanceOfUser(address user,address token) external view returns (uint256) {
+        return s_collateralDeposited[user][token];
+    }
+     function getCollateralTokenPriceFeed( address token) external view returns (address) {
         return s_priceFeeds[token];
     }
 
